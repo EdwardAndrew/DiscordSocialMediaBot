@@ -17,8 +17,11 @@ class DiscordWebhook():
         if 'title' not in Message:
             Message['title'] = ''
 
+        if 'color' not in Message:
+            Message['color'] = 0xFFFFFF
+
         message = DiscordWebhooks(self.webhook_url)
-        message.set_content(color=0xc8702a, description=Message['description'], title=Message['title'])
+        message.set_content(color=Message['color'], description=Message['description'], title=Message['title'])
         message.set_footer(text='https://example.com', ts=True)
         if 'image' in Message:
             message.set_image(url=Message['image'])
@@ -59,17 +62,17 @@ class Twitter():
         return null
 
     def getDiscordMessageFromTweet(self, Tweet):
-        post = {'title': 'Twitter'}
+        message = {'title': 'Twitter', 'color': 0x1DA1F2}
 
         if 'text' in Tweet:
-            post['description'] = Tweet['text']
+            message['description'] = Tweet['text']
         
         if 'entities' in Tweet:
             try:
-                post['image'] =  Tweet['entities']['media'][0]['media_url_https']
+                message['image'] =  Tweet['entities']['media'][0]['media_url_https']
             except KeyError:
                 pass
-        return post
+        return message
 
 class SocialMediaBot():
     def __init__(self, DISCORD_WEBHOOK_URL, TwitterConfig, StateFileConfig):
