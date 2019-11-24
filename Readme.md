@@ -1,8 +1,6 @@
-Install dependencies:
+Install dependencies: `pip install -r requirements.txt`
 
-`pip install -r requirements.txt`
-
-Set the necessary environment variables:
+Add environment variables:
 
 ```sh
   export SOCIALMEDIABOT_DISCORD_WEBHOOK_URL=<your_discord_webhook_url>
@@ -13,6 +11,10 @@ Set the necessary environment variables:
   export SOCIALMEDIABOT_INSTAGRAM_PASSWORD=<your_instagrame_password>
 ```
 
-Run the server:
+Run the server: `./start.sh`
 
-`python socialmediabot.py`
+Stop the server: `./stop.sh`
+
+State is persisted in `socialmediabot.data` which is created the first time the script runs. This is necessary to know which of the posts / tweets from the apis have already been posted in the discord channel.
+
+Logs are stored in `socialmediabot.logs` which is created when the app is launched from the start script.
