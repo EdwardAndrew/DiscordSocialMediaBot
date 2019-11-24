@@ -32,16 +32,16 @@ class DiscordWebhook():
 
 
 class Twitter():
-    def __init__(self, ConsumerApiKey, APISecretKey, AuthTTL):
-        self.ConsumerApiKey = ConsumerApiKey
+    def __init__(self, consumerApiKey, APISecretKey, authTTL):
+        self.consumerApiKey = consumerApiKey
         self.APISecretKey = APISecretKey
         self.token = ''
-        self.authTTL = AuthTTL
+        self.authTTL = authTTL
 
     def auth(self):
         threading.Timer(self.authTTL, self.auth).start()
         userAndPass = b64encode(
-            bytes(self.ConsumerApiKey + ':' + self.APISecretKey, 'utf-8')).decode('utf-8')
+            bytes(self.consumerApiKey + ':' + self.APISecretKey, 'utf-8')).decode('utf-8')
         headers = {
             'Content-Type': 'application/x-www-form-urlencoded',
             'Host': 'api.twitter.com',
@@ -73,38 +73,51 @@ class Twitter():
 
         if 'text' in Tweet:
             message['description'] = Tweet['text']
-
-        if 'entities' in Tweet:
-            try:
-                message['image'] = Tweet['entities']['media'][0]['media_url_https']
-            except KeyError:
-                pass
+        try:
+            message['image'] = Tweet['entities']['media'][0]['media_url_https']
+        except KeyError:
+            pass
         return message
 
 
 class Instagram():
-    def __init__(self, login, password):
+    def __init__(self, login, password, authTTL):
         self.api = InstagramAPI(login, password)
+        self.authTTL = authTTL
 
     def auth(self):
-        if (self.api.login()):
-            self.api.getSelfUserFeed()
-            print(self.api.LastJson)
-        else:
-            print("Instagram auth failed.")
+        threading.Timer(self.authTTL, self.auth).start()
+        self.api.login()
+
+    def getUserFeed(self):
+        self.api.getSelfUserFeed()
+        response = self.api.LastJson
+        if 'items' in response:
+            return response['items']
+        return []
+
+    def getDiscordMessageFromPost(self, Post):
+        message = {'title': 'Instagram', 'color': 0xCF2C94}
+
+        try:
+            message['description'] = Post['caption']['text']
+            message['image'] = Post['image_versions2']['candidates'][0]['url']
+        except KeyError:
+            pass
+        return message
 
 
 class SocialMediaBot():
-    def __init__(self, DISCORD_WEBHOOK_URL, TwitterConfig, InstagramConfig, StateFileConfig):
+    def __init__(self, DISCORD_WEBHOOK_URL, TwitterConfig, InstagramConfig, StateConfig):
         self.discord = DiscordWebhook(DISCORD_WEBHOOK_URL)
         self.twitter = Twitter(
             TwitterConfig['ConsumerAPIKey'], TwitterConfig['APISecretKey'], TwitterConfig['AuthTTL'])
         self.twitter.auth()
         self.instagram = Instagram(
-            InstagramConfig['Login'], InstagramConfig['Password'])
+            InstagramConfig['Login'], InstagramConfig['Password'], InstagramConfig['AuthTTL'])
         self.instagram.auth()
         self.checkTwitterInterval = 60
-        self.stateFile = StateFileConfig['Path']
+        self.stateFile = StateConfig['FilePath']
         try:
             f = open(self.stateFile)
         except IOError:
@@ -161,25 +174,47 @@ class SocialMediaBot():
         threading.Timer(TwitterConfig['Interval'], self.checkTwitter).start()
         self.sendRecentTweets()
 
+    def sendRecentInstagramPosts(self):
+        recentPosts = self.instagram.getUserFeed()
+        for post in reversed(recentPosts):
+            try:
+                uid = 'instagram'+str(post['id'])
+                if uid not in self.getSentMessageUids():
+                    try:
+                        self.discord.sendMessage(
+                            self.instagram.getDiscordMessageFromPost(post))
+                        self.storeSentMessageUid(uid)
+                    except ValueError:
+                        pass
+            except KeyError:
+                pass
+
+    def checkInstagram(self):
+        threading.Timer(InstagramConfig['Interval'],
+                        self.checkInstagram).start()
+        self.sendRecentInstagramPosts()
+
     def cleanup(self):
         threading.Timer(
-            StateFileConfig['CleanupInterval'], self.checkTwitter).start()
-        self.reduceStateFile(StateFileConfig['MaxEntries'])
+            StateConfig['CleanupInterval'], self.checkTwitter).start()
+        self.reduceStateFile(StateConfig['MaxEntries'])
 
     def start(self):
         threading.Timer(
-            StateFileConfig['CleanupInterval'], self.cleanup).start()
+            StateConfig['CleanupInterval'], self.cleanup).start()
         self.checkTwitter()
 
 
 if __name__ == "__main__":
     DiscordWebhookURL = os.environ.get('SOCIALMEDIABOT_DISCORD_WEBHOOK_URL')
     TwitterConfig = {'ScreenName': os.environ.get('SOCIALMEDIABOT_TWITTER_SCREENNAME'), 'ConsumerAPIKey': os.environ.get(
-        'SOCIALMEDIABOT_TWITTER_CONSUMER_API_KEY'), 'APISecretKey': os.environ.get('SOCIALMEDIABOT_TWITTER_API_SECRET_KEY'), 'Interval': 30, 'AuthTTL': 3600}
-    StateFileConfig = {'Path': 'socialmediabot.data',
+        'SOCIALMEDIABOT_TWITTER_CONSUMER_API_KEY'), 'APISecretKey': os.environ.get('SOCIALMEDIABOT_TWITTER_API_SECRET_KEY'), 'Interval': 30, 'AuthTTL': 60*60}
+    StateConfig = {'FilePath': 'socialmediabot.data',
                        'CleanupInterval': 3600*24, 'MaxEntries': 1000}
-    InstagramConfig = {'Login': os.environ.get('SOCIALMEDIABOT_INSTAGRAM_LOGIN'), 'Password': os.environ.get('SOCIALMEDIABOT_INSTAGRAM_PASSWORD')}
+    InstagramConfig = {'Login': os.environ.get(
+        'SOCIALMEDIABOT_INSTAGRAM_LOGIN'), 'Password': os.environ.get('SOCIALMEDIABOT_INSTAGRAM_PASSWORD'), 'Interval': 30, 'AuthTTL': 60*45}
+
     socialMediaBot = SocialMediaBot(
-        DiscordWebhookURL, TwitterConfig, InstagramConfig, StateFileConfig)
+        DiscordWebhookURL, TwitterConfig, InstagramConfig, StateConfig)
     socialMediaBot.start()
     print("🚀  Social Media Bot is running...")
