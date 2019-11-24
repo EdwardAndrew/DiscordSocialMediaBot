@@ -34,10 +34,18 @@ class DiscordWebhook():
         if 'icon_url' not in Message['author']:
             Message['author']['icon_url'] = ''
 
+        if 'footer' not in Message:
+            Message['footer'] = {}
+        if 'text' not in Message['footer']:
+            Message['footer']['text'] = ''
+        if 'icon_url' not in Message['footer']:
+            Message['footer']['icon_url'] = ''
+
         message = DiscordWebhooks(self.webhook_url)
         message.set_content(
             color=Message['color'], description=Message['description'], title=Message['title'])
-        message.set_footer(text="I'm a bot", ts=True)
+        message.set_footer(
+            text=Message['footer']['text'], icon_url=Message['footer']['icon_url'])
         message.set_author(url=Message['author']['url'], name=Message['author']
                            ['name'], icon_url=Message['author']['icon_url'])
         if 'image' in Message:
