@@ -19,6 +19,9 @@ class DiscordWebhook():
         if 'description' not in Message:
             raise ValueError('Discord messages requires a description')
 
+        if 'content' not in Message:
+            Message['content'] = ''
+
         if 'title' not in Message:
             Message['title'] = ''
 
@@ -43,7 +46,7 @@ class DiscordWebhook():
 
         message = DiscordWebhooks(self.webhook_url)
         message.set_content(
-            color=Message['color'], description=Message['description'], title=Message['title'])
+            color=Message['color'], content=Message['content'], description=Message['description'], title=Message['title'])
         message.set_footer(
             text=Message['footer']['text'], icon_url=Message['footer']['icon_url'])
         message.set_author(url=Message['author']['url'], name=Message['author']
@@ -93,13 +96,19 @@ class Twitter():
         return []
 
     def getDiscordMessageFromTweet(self, Tweet):
-        message = {'title': 'Twitter', 'color': 0x1DA1F2}
-
+        message = {'title': '', 'color': 0x1DA1F2}
+        message['footer'] = {
+            'text': 'Twitter', 'icon_url': 'https://abs.twimg.com/responsive-web/web/icon-ios.8ea219d4.png'}
         if 'text' in Tweet:
             message['description'] = Tweet['text']
         try:
-            message['author'] = {'name': Tweet['user']['name'], 'icon_url': Tweet['user']['profile_image_url_https'],
-                                 'url': 'https://twitter.com/' + Tweet['user']['screen_name'] + '/status/' + Tweet['id_str']}
+            url = 'https://twitter.com/' + \
+                Tweet['user']['screen_name'] + '/status/' + Tweet['id_str']
+            username = Tweet['user']['name']
+            message['author'] = {'name': username, 'icon_url': Tweet['user']['profile_image_url_https'],
+                                 'url': url}
+            message['content'] = '<@&647992314530103346> ' + \
+                username + ' just tweeted! ' + url
             message['image'] = Tweet['entities']['media'][0]['media_url_https']
         except KeyError:
             pass
@@ -123,13 +132,18 @@ class Instagram():
         return []
 
     def getDiscordMessageFromPost(self, Post):
-        message = {'title': 'Instagram', 'color': 0xCF2C94}
-
+        message = {'title': '', 'color': 0xCF2C94}
+        message['footer'] = {
+            'text': 'Instagram', 'icon_url': 'https://www.instagram.com/static/images/ico/favicon-192.png/68d99ba29cc8.png'}
         try:
             message['description'] = Post['caption']['text']
             message['image'] = Post['image_versions2']['candidates'][0]['url']
-            message['author'] = {'name': Post['user']['username'], 'icon_url': Post['user']
-                                 ['profile_pic_url'], 'url': 'https://www.instagram.com/p/'+Post['code']}
+            url = 'https://www.instagram.com/p/'+Post['code']
+            username = Post['user']['username']
+            message['author'] = {'name': username, 'icon_url': Post['user']
+                                 ['profile_pic_url'], 'url': url}
+            message['content'] = '<@&647992314530103346> ' + \
+                username + ' just posted on Instagram! ' + url
         except KeyError:
             pass
         return message
