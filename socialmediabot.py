@@ -203,6 +203,7 @@ class SocialMediaBot():
         threading.Timer(
             StateConfig['CleanupInterval'], self.cleanup).start()
         self.checkTwitter()
+        self.checkInstagram()
 
 
 if __name__ == "__main__":
@@ -210,7 +211,7 @@ if __name__ == "__main__":
     TwitterConfig = {'ScreenName': os.environ.get('SOCIALMEDIABOT_TWITTER_SCREENNAME'), 'ConsumerAPIKey': os.environ.get(
         'SOCIALMEDIABOT_TWITTER_CONSUMER_API_KEY'), 'APISecretKey': os.environ.get('SOCIALMEDIABOT_TWITTER_API_SECRET_KEY'), 'Interval': 30, 'AuthTTL': 60*60}
     StateConfig = {'FilePath': 'socialmediabot.data',
-                       'CleanupInterval': 3600*24, 'MaxEntries': 1000}
+                   'CleanupInterval': 3600*24, 'MaxEntries': 1000}
     InstagramConfig = {'Login': os.environ.get(
         'SOCIALMEDIABOT_INSTAGRAM_LOGIN'), 'Password': os.environ.get('SOCIALMEDIABOT_INSTAGRAM_PASSWORD'), 'Interval': 30, 'AuthTTL': 60*45}
 
