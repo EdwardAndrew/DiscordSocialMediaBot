@@ -1,5 +1,7 @@
 import os
+import sys
 import json
+import datetime
 import requests
 import threading
 from base64 import b64encode
@@ -9,8 +11,9 @@ from discord_webhooks import DiscordWebhooks
 
 
 class DiscordWebhook():
-    def __init__(self, webhook_url):
+    def __init__(self, webhook_url, dry_run):
         self.webhook_url = webhook_url
+        self.dry_run = dry_run
 
     def sendMessage(self, Message):
         if 'description' not in Message:
@@ -22,13 +25,26 @@ class DiscordWebhook():
         if 'color' not in Message:
             Message['color'] = 0xFFFFFF
 
+        if 'author' not in Message:
+            Message['author'] = {}
+        if 'name' not in Message['author']:
+            Message['author']['name'] = ''
+        if 'url' not in Message['author']:
+            Message['author']['url'] = ''
+        if 'icon_url' not in Message['author']:
+            Message['author']['icon_url'] = ''
+
         message = DiscordWebhooks(self.webhook_url)
         message.set_content(
             color=Message['color'], description=Message['description'], title=Message['title'])
-        message.set_footer(text='https://example.com', ts=True)
+        message.set_footer(text="I'm a bot", ts=True)
+        message.set_author(url=Message['author']['url'], name=Message['author']
+                           ['name'], icon_url=Message['author']['icon_url'])
         if 'image' in Message:
             message.set_image(url=Message['image'])
-        message.send()
+
+        if not self.dry_run:
+            message.send()
 
 
 class Twitter():
@@ -74,6 +90,8 @@ class Twitter():
         if 'text' in Tweet:
             message['description'] = Tweet['text']
         try:
+            message['author'] = {'name': Tweet['user']['name'], 'icon_url': Tweet['user']['profile_image_url_https'],
+                                 'url': 'https://twitter.com/' + Tweet['user']['screen_name'] + '/status/' + Tweet['id_str']}
             message['image'] = Tweet['entities']['media'][0]['media_url_https']
         except KeyError:
             pass
@@ -102,14 +120,17 @@ class Instagram():
         try:
             message['description'] = Post['caption']['text']
             message['image'] = Post['image_versions2']['candidates'][0]['url']
+            message['author'] = {'name': Post['user']['username'], 'icon_url': Post['user']
+                                 ['profile_pic_url'], 'url': 'https://www.instagram.com/p/'+Post['code']}
         except KeyError:
             pass
         return message
 
 
 class SocialMediaBot():
-    def __init__(self, DISCORD_WEBHOOK_URL, TwitterConfig, InstagramConfig, StateConfig):
-        self.discord = DiscordWebhook(DISCORD_WEBHOOK_URL)
+    def __init__(self, DiscordConfig, TwitterConfig, InstagramConfig, StateConfig):
+        self.discord = DiscordWebhook(
+            DiscordConfig['WebhookURL'], DiscordConfig['DryRun'])
         self.twitter = Twitter(
             TwitterConfig['ConsumerAPIKey'], TwitterConfig['APISecretKey'], TwitterConfig['AuthTTL'])
         self.twitter.auth()
@@ -207,7 +228,9 @@ class SocialMediaBot():
 
 
 if __name__ == "__main__":
-    DiscordWebhookURL = os.environ.get('SOCIALMEDIABOT_DISCORD_WEBHOOK_URL')
+    dryRun = len(sys.argv) == 2 and sys.argv[1] == 'dryRun'
+    DiscordConfig = {'WebhookURL': os.environ.get(
+        'SOCIALMEDIABOT_DISCORD_WEBHOOK_URL'), 'DryRun': dryRun}
     TwitterConfig = {'ScreenName': os.environ.get('SOCIALMEDIABOT_TWITTER_SCREENNAME'), 'ConsumerAPIKey': os.environ.get(
         'SOCIALMEDIABOT_TWITTER_CONSUMER_API_KEY'), 'APISecretKey': os.environ.get('SOCIALMEDIABOT_TWITTER_API_SECRET_KEY'), 'Interval': 30, 'AuthTTL': 60*60}
     StateConfig = {'FilePath': 'socialmediabot.data',
@@ -216,6 +239,10 @@ if __name__ == "__main__":
         'SOCIALMEDIABOT_INSTAGRAM_LOGIN'), 'Password': os.environ.get('SOCIALMEDIABOT_INSTAGRAM_PASSWORD'), 'Interval': 30, 'AuthTTL': 60*45}
 
     socialMediaBot = SocialMediaBot(
-        DiscordWebhookURL, TwitterConfig, InstagramConfig, StateConfig)
+        DiscordConfig, TwitterConfig, InstagramConfig, StateConfig)
     socialMediaBot.start()
+    if dryRun:
+        print(
+            "🚀  Social Media Bot - Dry Run. Creating state files but not sending messages")
+        os._exit(0)
     print("🚀  Social Media Bot is running...")
