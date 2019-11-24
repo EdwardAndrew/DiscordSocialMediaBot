@@ -149,6 +149,6 @@ if __name__ == "__main__":
     TwitterConfig = {'ScreenName': os.environ.get('SOCIALMEDIABOT_TWITTER_SCREENNAME'), 'ConsumerAPIKey': os.environ.get('SOCIALMEDIABOT_TWITTER_CONSUMER_API_KEY'), 'APISecretKey': os.environ.get('SOCIALMEDIABOT_TWITTER_API_SECRET_KEY'), 'Interval': 30, 'AuthTTL': 3600 }
     StateFileConfig = { 'Path': 'socialmediabot.data', 'CleanupInterval': 3600*24, 'MaxEntries': 1000}
 
-    newsbot = SocialMediaBot(DiscordWebhookURL, TwitterConfig, StateFileConfig)
-    newsbot.start()
+    socialMediaBot = SocialMediaBot(DiscordWebhookURL, TwitterConfig, StateFileConfig)
+    socialMediaBot.start()
     print("🚀  Social Media Bot is running...")
