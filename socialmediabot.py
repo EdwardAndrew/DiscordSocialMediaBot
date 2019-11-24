@@ -239,7 +239,7 @@ class SocialMediaBot():
 
     def cleanup(self):
         threading.Timer(
-            StateConfig['CleanupInterval'], self.checkTwitter).start()
+            StateConfig['CleanupInterval'], self.reduceStateFile).start()
         self.reduceStateFile(StateConfig['MaxEntries'])
 
     def start(self):
