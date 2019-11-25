@@ -1,3 +1,5 @@
+This DiscordSocialMedia bot will take your tweets and Instagram posts and repost them into your channel. It uses Discord-Webhooks :smile:
+
 Install dependencies: `pip install -r requirements.txt`
 
 Add environment variables:
