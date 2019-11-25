@@ -15,6 +15,8 @@ Add environment variables:
 
 Run the server: `./start.sh`
 
+This script perfroms a 'DryRun' which will persist the ids of the posts and tweets that have already been posted. This prevents a spam of messages going into the channel when you first start the server.
+
 Stop the server: `./stop.sh`
 
 State is persisted in `socialmediabot.data` which is created the first time the script runs. This is necessary to know which of the posts / tweets from the apis have already been posted in the discord channel.
