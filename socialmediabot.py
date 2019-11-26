@@ -117,18 +117,25 @@ class Twitter():
 
 class Instagram():
     def __init__(self, login, password, authTTL):
-        self.api = InstagramAPI(login, password)
         self.authTTL = authTTL
+        self.login = login
+        self.password = password
 
     def auth(self):
         threading.Timer(self.authTTL, self.auth).start()
-        self.api.login()
+        self.api = InstagramAPI(self.login, self.password)
+        if not self.api.login():
+            print("Failed to login")
 
-    def getUserFeed(self):
-        self.api.getSelfUserFeed()
-        response = self.api.LastJson
-        if 'items' in response:
-            return response['items']
+    def getUserFeed(self, Retry=True):
+        if self.api.getSelfUserFeed():
+            response = self.api.LastJson
+            if 'items' in response:
+                return response['items']
+        elif Retry:
+            print("Retrying after auth")
+            self.auth()
+            return self.getUserFeed(False)
         return []
 
     def getDiscordMessageFromPost(self, Post):
@@ -148,6 +155,18 @@ class Instagram():
             pass
         return message
 
+def ReduceFile(Path, NumberlinesToReduceTo):
+    lines = deque()
+    try:
+        f = open(Path)
+        lines = deque(f, NumberlinesToReduceTo)
+    finally:
+        f.close()
+    try:
+        f = open(Path, 'w+')
+        f.writelines(lines)
+    finally:
+        f.close()
 
 class SocialMediaBot():
     def __init__(self, DiscordConfig, TwitterConfig, InstagramConfig, StateConfig):
@@ -182,19 +201,6 @@ class SocialMediaBot():
         try:
             f = open(self.stateFile, 'a+')
             f.write(uid+'\n')
-        finally:
-            f.close()
-
-    def reduceStateFile(self, NumberlinesToReduceTo):
-        lines = deque()
-        try:
-            f = open(self.stateFile)
-            lines = deque(f, NumberlinesToReduceTo)
-        finally:
-            f.close()
-        try:
-            f = open(self.stateFile, 'w+')
-            f.writelines(lines)
         finally:
             f.close()
 
@@ -239,8 +245,10 @@ class SocialMediaBot():
 
     def cleanup(self):
         threading.Timer(
-            StateConfig['CleanupInterval'], self.checkTwitter).start()
-        self.reduceStateFile(StateConfig['MaxEntries'])
+            StateConfig['CleanupInterval'], self.cleanup).start()
+        ReduceFile(StateConfig['FilePath'], StateConfig['MaxEntries'])
+        ReduceFile('socialmediabot.logs', 1000)
+
 
     def start(self):
         threading.Timer(
