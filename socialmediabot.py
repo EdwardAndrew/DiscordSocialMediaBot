@@ -155,6 +155,7 @@ class Instagram():
             pass
         return message
 
+
 def ReduceFile(Path, NumberlinesToReduceTo):
     lines = deque()
     try:
@@ -167,6 +168,7 @@ def ReduceFile(Path, NumberlinesToReduceTo):
         f.writelines(lines)
     finally:
         f.close()
+
 
 class SocialMediaBot():
     def __init__(self, DiscordConfig, TwitterConfig, InstagramConfig, StateConfig):
@@ -248,7 +250,6 @@ class SocialMediaBot():
             StateConfig['CleanupInterval'], self.cleanup).start()
         ReduceFile(StateConfig['FilePath'], StateConfig['MaxEntries'])
         ReduceFile('socialmediabot.logs', 1000)
-
 
     def start(self):
         threading.Timer(
