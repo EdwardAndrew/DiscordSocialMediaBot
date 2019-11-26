@@ -144,13 +144,13 @@ class Instagram():
             'text': 'Instagram', 'icon_url': 'https://www.instagram.com/static/images/ico/favicon-192.png/68d99ba29cc8.png'}
         try:
             message['description'] = Post['caption']['text']
-            message['image'] = Post['image_versions2']['candidates'][0]['url']
-            url = 'https://www.instagram.com/p/'+Post['code']
             username = Post['user']['username']
-            message['author'] = {'name': username, 'icon_url': Post['user']
-                                 ['profile_pic_url'], 'url': url}
+            url = 'https://www.instagram.com/p/'+Post['code']
             message['content'] = '<@&647992314530103346> ' + \
                 username + ' just posted on Instagram! ' + url
+            message['author'] = {'name': username, 'icon_url': Post['user']
+                                 ['profile_pic_url'], 'url': url}
+            message['image'] = Post['image_versions2']['candidates'][0]['url']
         except KeyError:
             pass
         return message
