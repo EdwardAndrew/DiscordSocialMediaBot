@@ -1,3 +1,7 @@
+This DiscordSocialMedia bot will take your tweets and Instagram posts and repost them into your channel. It uses Discord-Webhooks :smile:
+
+Clone this respository: `git clone https://github.com/EdwardAndrew/DiscordSocialMediaBot.git`
+
 Install dependencies: `pip install -r requirements.txt`
 
 Add environment variables:
@@ -12,6 +16,8 @@ Add environment variables:
 ```
 
 Run the server: `./start.sh`
+
+This script perfroms a 'DryRun' which will persist the ids of the posts and tweets that have already been posted. This prevents a spam of messages going into the channel when you first start the server.
 
 Stop the server: `./stop.sh`
 
