@@ -102,11 +102,11 @@ class Twitter():
         if 'text' in Tweet:
             message['description'] = Tweet['text']
         try:
-            url = 'https://twitter.com/' + \
-                Tweet['user']['screen_name'] + '/status/' + Tweet['id_str']
+            usernameurl = 'https://twitter.com/' + Tweet['user']['screen_name']
+            url = usernameurl + '/status/' + Tweet['id_str']
             username = Tweet['user']['name']
             message['author'] = {'name': username, 'icon_url': Tweet['user']['profile_image_url_https'],
-                                 'url': url}
+                                 'url': usernameurl}
             message['content'] = '<@&647992314530103346> ' + \
                 username + ' just tweeted! ' + url
             message['image'] = Tweet['entities']['media'][0]['media_url_https']
@@ -177,9 +177,9 @@ class SocialMediaBot():
         self.twitter = Twitter(
             TwitterConfig['ConsumerAPIKey'], TwitterConfig['APISecretKey'], TwitterConfig['AuthTTL'])
         self.twitter.auth()
-        self.instagram = Instagram(
-            InstagramConfig['Login'], InstagramConfig['Password'], InstagramConfig['AuthTTL'])
-        self.instagram.auth()
+        # self.instagram = Instagram(
+        # InstagramConfig['Login'], InstagramConfig['Password'], InstagramConfig['AuthTTL'])
+        # self.instagram.auth()
         self.checkTwitterInterval = 60
         self.stateFile = StateConfig['FilePath']
         try:
@@ -211,7 +211,7 @@ class SocialMediaBot():
         for tweet in reversed(recentTweets):
             try:
                 uid = 'twitter' + str(tweet['id'])
-                if uid not in self.getSentMessageUids():
+                if not tweet['in_reply_to_status_id'] and uid not in self.getSentMessageUids():
                     try:
                         self.discord.sendMessage(
                             self.twitter.getDiscordMessageFromTweet(tweet))
@@ -225,25 +225,25 @@ class SocialMediaBot():
         threading.Timer(TwitterConfig['Interval'], self.checkTwitter).start()
         self.sendRecentTweets()
 
-    def sendRecentInstagramPosts(self):
-        recentPosts = self.instagram.getUserFeed()
-        for post in reversed(recentPosts):
-            try:
-                uid = 'instagram'+str(post['id'])
-                if uid not in self.getSentMessageUids():
-                    try:
-                        self.discord.sendMessage(
-                            self.instagram.getDiscordMessageFromPost(post))
-                        self.storeSentMessageUid(uid)
-                    except ValueError:
-                        pass
-            except KeyError:
-                pass
+    # def sendRecentInstagramPosts(self):
+    #     recentPosts = self.instagram.getUserFeed()
+    #     for post in reversed(recentPosts):
+    #         try:
+    #             uid = 'instagram'+str(post['id'])
+    #             if uid not in self.getSentMessageUids():
+    #                 try:
+    #                     self.discord.sendMessage(
+    #                         self.instagram.getDiscordMessageFromPost(post))
+    #                     self.storeSentMessageUid(uid)
+    #                 except ValueError:
+    #                     pass
+    #         except KeyError:
+    #             pass
 
-    def checkInstagram(self):
-        threading.Timer(InstagramConfig['Interval'],
-                        self.checkInstagram).start()
-        self.sendRecentInstagramPosts()
+    # def checkInstagram(self):
+    #     threading.Timer(InstagramConfig['Interval'],
+    #                     self.checkInstagram).start()
+    #     self.sendRecentInstagramPosts()
 
     def cleanup(self):
         threading.Timer(
@@ -255,7 +255,7 @@ class SocialMediaBot():
         threading.Timer(
             StateConfig['CleanupInterval'], self.cleanup).start()
         self.checkTwitter()
-        self.checkInstagram()
+        # self.checkInstagram()
 
 
 if __name__ == "__main__":
